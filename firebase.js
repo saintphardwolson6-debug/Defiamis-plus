@@ -1,0 +1,1 @@
+export const firebaseConfig = {}; /* Remplace par ta config Firebase si besoin */

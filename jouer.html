@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Jouer — Défi-Amis+</title><link rel="stylesheet" href="assets/css/style.css"></head>
+<body>
+  <main class="page card">
+    <h2>🎲 Jouer au Défi</h2>
+    <div id="startBlock">
+      <label>Colle le lien ou entre l'UID :</label>
+      <input id="uidInput" placeholder="Ex : DEF-ABC12">
+      <div class="row"><button id="openBtn" class="btn primary">Ouvrir le défi</button>
+      <button id="openUrlBtn" class="btn ghost">Ouvrir depuis l'URL</button></div>
+    </div>
+
+    <div id="room" class="hidden">
+      <div class="hostRow">
+        <h3 id="hostName"></h3>
+        <p id="roomMode" class="muted"></p>
+      </div>
+
+      <div id="questionZone"></div>
+
+      <div id="playerBlock" class="row">
+        <input id="playerName" placeholder="Ton prénom">
+        <button id="playBtn" class="btn primary">Commencer</button>
+      </div>
+
+      <div id="resultBox" class="created hidden"></div>
+
+      <h3 class="muted">Classement — Les amis de <span id="hostDisplay"></span></h3>
+      <div id="podium" class="podium"></div>
+      <ol id="leaderboard" class="leaderboard"></ol>
+
+      <div class="row">
+        <button id="shareBtn" class="btn">Partager sur WhatsApp</button>
+        <button id="copyBtn" class="btn ghost">Copier le lien</button>
+      </div>
+
+      <div id="ownerPanel" class="card hidden"><h4>🔒 Panel propriétaire</h4><p>Entrez l'OwnerCode pour vérifier les joueurs.</p><input id="ownerCode" placeholder="OwnerCode"><button id="checkOwner" class="btn">Vérifier</button></div>
+    </div>
+  </main>
+
+<script type="module">
+import { openRoomByUID, listenRoomPlayers, submitPlayerResult } from './assets/js/script.js';
+const openBtn = document.getElementById('openBtn');
+const openUrlBtn = document.getElementById('openUrlBtn');
+const uidInput = document.getElementById('uidInput');
+const roomDiv = document.getElementById('room');
+const hostNameEl = document.getElementById('hostName');
+const roomMode = document.getElementById('roomMode');
+const questionZone = document.getElementById('questionZone');
+const playerName = document.getElementById('playerName');
+const playBtn = document.getElementById('playBtn');
+const resultBox = document.getElementById('resultBox');
+const hostDisplay = document.getElementById('hostDisplay');
+const podium = document.getElementById('podium');
+const leaderboard = document.getElementById('leaderboard');
+const shareBtn = document.getElementById('shareBtn');
+const copyBtn = document.getElementById('copyBtn');
+const ownerPanel = document.getElementById('ownerPanel');
+const ownerCode = document.getElementById('ownerCode');
+const checkOwner = document.getElementById('checkOwner');
+
+let currentRoom = null; let currentUID = null; let answers = {};
+
+openBtn.onclick = ()=> openRoom(uidInput.value.trim());
+openUrlBtn.onclick = ()=> { const params = new URLSearchParams(location.search); const uid = params.get('uid'); if(uid) openRoom(uid); else alert('Aucun UID dans l\'URL.'); };
+
+async function openRoom(uid){
+  if(!uid) return alert('Entre un UID ou colle le lien.');
+  try{ const u = new URL(uid); const p = new URLSearchParams(u.search); if(p.get('uid')) uid = p.get('uid'); }catch(e){}
+  const room = await openRoomByUID(uid);
+  if(!room) return alert('Défi introuvable.');
+  currentRoom = room; currentUID = uid;
+  hostNameEl.textContent = room.host;
+  roomMode.textContent = room.mode === 'ami' ? 'Mode Ami' : 'Mode Crush';
+  hostDisplay.textContent = room.host;
+  renderQuestions(room);
+  roomDiv.classList.remove('hidden');
+  listenRoomPlayers(uid, arr=> renderLeaderboard(arr));
+}
+
+function renderQuestions(room){
+  questionZone.innerHTML = '';
+  room.questions.forEach((q,i)=>{
+    const div = document.createElement('div'); div.className='quizItem';
+    div.innerHTML = `<p>${i+1}. ${q.question}</p>`;
+    q.options.forEach((opt, idx)=>{
+      const b = document.createElement('button');
+      b.className='optionBtn';
+      b.textContent = opt;
+      b.onclick = ()=> {
+        answers[i] = idx;
+        const siblings = b.parentNode.querySelectorAll('.optionBtn'); siblings.forEach(s=>s.classList.remove('selected')); b.classList.add('selected');
+      };
+      div.appendChild(b);
+    });
+    questionZone.appendChild(div);
+  });
+}
+
+playBtn.onclick = async ()=>{
+  const name = playerName.value.trim();
+  if(!name) return alert('Entre ton prénom.');
+  const total = currentRoom.questions.length;
+  let score = 0;
+  currentRoom.questions.forEach((q,i)=>{ const given = typeof answers[i] === 'number' ? answers[i] : -1; if(given === q.answer) score++; });
+  await submitPlayerResult(currentUID, { name, score, date: new Date().toISOString(), verified:false });
+  resultBox.classList.remove('hidden'); resultBox.innerHTML = `<h3>Résultat : ${score} / ${currentRoom.questions.length}</h3><p>Merci d'avoir joué !</p>`;
+};
+
+function renderLeaderboard(list){ leaderboard.innerHTML=''; if(!list.length){ leaderboard.innerHTML='<li>Aucun joueur</li>'; podium.innerHTML=''; return; } list.sort((a,b)=> b.score - a.score); const top3 = list.slice(0,3); podium.innerHTML = top3.map((p,i)=>`<div class="slot">${i===0?'🥇':i===1?'🥈':'🥉'}<br><strong>${p.name}</strong><div>${p.score}</div></div>`).join(''); list.forEach(p=>{ const li = document.createElement('li'); li.innerHTML = `<strong>${p.name}</strong> — ${p.score} pts ${p.verified?'<span class="small">✅ vérifié</span>':''}`; leaderboard.appendChild(li); }); }
+
+shareBtn.onclick = ()=>{ if(!currentUID) return alert('Ouvre d\'abord le défi.'); const link = location.origin + '/jouer.html?uid=' + currentUID; const text = encodeURIComponent(`Viens deviner mes réponses sur Défi-Amis+ ! ${link}`); window.open(`https://wa.me/?text=${text}`,'_blank'); };
+copyBtn.onclick = ()=>{ if(!currentUID) return alert('Ouvre d\'abord le défi.'); navigator.clipboard.writeText(location.origin + '/jouer.html?uid=' + currentUID).then(()=> alert('Lien copié !')); };
+
+checkOwner.onclick = ()=>{ const code = ownerCode.value.trim(); if(code && currentRoom && code === currentRoom.ownerCode){ alert('Owner vérifié — panel activé'); ownerPanel.classList.add('verified'); } else alert('OwnerCode invalide'); };
+
+const params = new URLSearchParams(location.search); const uidParam = params.get('uid'); if(uidParam) openRoom(uidParam);
+</script>
+</body>
+</html>

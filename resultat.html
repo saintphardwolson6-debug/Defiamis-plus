@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Résultat — Défi-Amis+</title><link rel="stylesheet" href="assets/css/style.css"></head>
+<body>
+  <main class="page card centre">
+    <h2>🏁 Résultat</h2>
+    <div id="resultContent" class="created"></div>
+    <div class="row">
+      <button onclick="location.href='index.html'" class="btn">Accueil</button>
+      <button onclick="location.href='creer-defi.html'" class="btn primary">Créer mon propre défi (VIP)</button>
+    </div>
+  </main>
+<script>
+const last = JSON.parse(localStorage.getItem('lastResult') || 'null');
+const el = document.getElementById('resultContent');
+if(last){
+  el.innerHTML = `<h3>${last.name}, ton score est ${last.score}/${last.total}</h3><p>${last.message || ''}</p>`;
+}else{
+  el.innerHTML = '<p>Aucun résultat récent.</p>';
+}
+</script>
+</body>
+</html>

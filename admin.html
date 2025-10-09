@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Admin — Défi-Amis+</title><link rel="stylesheet" href="assets/css/style.css"></head>
+<body>
+  <main class="page card">
+    <h2>🔧 Admin — Validation VIP</h2>
+    <p class="muted">Valide les demandes VIP (stockées localement).</p>
+    <div id="list"></div>
+    <div class="row"><button class="btn ghost" onclick="location.href='index.html'">Retour</button></div>
+  </main>
+<script type="module">
+import { listPendingPayments, validatePayment } from './assets/js/script.js';
+async function render(){ const pending = await listPendingPayments(); const div = document.getElementById('list'); if(!pending.length){ div.innerHTML='<p>Aucune demande en attente.</p>'; return; } div.innerHTML = pending.map(p=>`<div class="row item"><div style="flex:1"><strong>${p.name}</strong> — ${p.txn} — <span class="small muted">${p.date}</span></div><div><button class="btn" data-name="${p.name}" data-txn="${p.txn}">Valider</button> <button class="btn ghost" data-txn="${p.txn}" data-name="${p.name}" data-action="del">Suppr</button></div></div>`).join(''); div.querySelectorAll('button').forEach(b=>{ b.onclick = async ()=>{ const name=b.dataset.name; const txn=b.dataset.txn; const action=b.dataset.action; if(action==='del'){ await validatePayment(txn, true); } else { await validatePayment(txn, false); alert('VIP activé pour '+name); } render(); }; }); }
+render();
+</script>
+</body>
+</html>

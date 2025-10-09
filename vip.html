@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Devenir VIP — Défi-Amis+</title><link rel="stylesheet" href="assets/css/style.css"></head>
+<body>
+  <main class="page card centre">
+    <h2>👑 Accès VIP</h2>
+    <p>Pour créer un défi personnalisé, entre ton code VIP ou effectue le paiement via NatCash.</p>
+    <p><strong>Montant :</strong> 50 HTG — <strong>NatCash :</strong> <code>50955865621</code></p>
+    <p>Support WhatsApp : <a href="https://wa.me/50936484174" target="_blank">+509 3648 4174</a></p>
+
+    <label>Ton prénom</label>
+    <input id="vipName" placeholder="Ex : Tchoulo">
+
+    <label>Code VIP (ou laisse vide pour demander paiement)</label>
+    <input id="vipCode" placeholder="Ex : VIP-2025">
+
+    <label>Référence transaction (si payé)</label>
+    <input id="vipTxn" placeholder="Ex : TXN-20251008-001">
+
+    <div class="row">
+      <button id="btnValidate" class="btn primary">Valider l'accès VIP</button>
+      <button class="btn ghost" onclick="location.href='index.html'">Retour</button>
+    </div>
+
+    <p class="small muted" id="vipStatus"></p>
+  </main>
+
+<script type="module">
+import { requestVip } from './assets/js/script.js';
+document.getElementById('btnValidate').onclick = async ()=>{
+  const name = document.getElementById('vipName').value.trim();
+  const code = document.getElementById('vipCode').value.trim();
+  const txn = document.getElementById('vipTxn').value.trim();
+  if(!name) return alert('Entre ton prénom.');
+  // VIP master code
+  if(code === 'VIP-2025'){
+    const v = JSON.parse(localStorage.getItem('vipUsers')||'{}');
+    v[name]=true;
+    localStorage.setItem('vipUsers', JSON.stringify(v));
+    alert('✅ Code VIP valide — accès VIP activé.');
+    location.href = 'creer-defi.html';
+    return;
+  }
+  if(txn){
+    await requestVip(name, txn);
+    document.getElementById('vipStatus').textContent = "Demande envoyée — l'administrateur validera la transaction.";
+    return;
+  }
+  alert('Code invalide ou transaction manquante. Si tu as payé, entre la référence TXN. Si tu as un code, entre-le.');
+};
+</script>
+</body>
+</html>

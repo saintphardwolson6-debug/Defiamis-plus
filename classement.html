@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Classements — Défi-Amis+</title><link rel="stylesheet" href="assets/css/style.css"></head>
+<body>
+  <main class="page card">
+    <h2>🏆 Classements</h2>
+    <section><h3>Classement global</h3><ol id="global"></ol></section>
+    <section><h3>Classement local (par UID)</h3><label>UID :</label><input id="uidLocal"><button id="openLocal" class="btn">Ouvrir</button><ol id="local"></ol></section>
+    <div class="row"><button class="btn ghost" onclick="location.href='index.html'">Retour</button></div>
+  </main>
+<script type="module">
+import { getAllPlayersGlobal, getRoomPlayers } from './assets/js/script.js';
+async function renderGlobal(){ const arr = await getAllPlayersGlobal(); const g = document.getElementById('global'); g.innerHTML = arr.length ? arr.map(p=>`<li>${p.name} — ${p.score} pts</li>`).join('') : '<li>Aucun score</li>'; }
+document.getElementById('openLocal').onclick = async ()=>{ const uid = document.getElementById('uidLocal').value.trim(); if(!uid) return alert('Entrez l\'UID'); const arr = await getRoomPlayers(uid); const l = document.getElementById('local'); l.innerHTML = arr.length ? arr.map(p=>`<li>${p.name} — ${p.score} pts ${p.verified?'<span class="small">✅</span>':''}</li>`).join('') : '<li>Aucun joueur pour ce défi</li>'; };
+renderGlobal();
+</script>
+</body>
+</html>
